@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediScan — Medicine Expiry Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f0;
+    --surface: #ffffff;
+    --surface2: #e8f0e8;
+    --green-dark: #1a3d2b;
+    --green-mid: #2d6a4f;
+    --green-light: #0af185;
+    --accent: #b7e4c7;
+    --warn: #f4a261;
+    --danger: #e63946;
+    --safe: #2d6a4f;
+    --text: #0d1f15;
+    --text-muted: #5a7a66;
+    --border: #c8dfc8;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(26,61,43,0.10);
+    --shadow-lg: 0 8px 40px rgba(26,61,43,0.16);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(82,183,136,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(45,106,79,0.10) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: var(--green-dark);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .logo-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--green-dark);
+    letter-spacing: -0.03em;
+  }
+
+  .logo-text p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .stat-pill {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    padding: 0.45rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+  }
+
+  .stat-pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-safe { background: var(--safe); }
+  .dot-warn { background: var(--warn); }
+  .dot-danger { background: var(--danger); }
+
+  /* FORM CARD */
+  .form-card {
+    background: var(--green-dark);
+    border-radius: 24px;
+    padding: 2rem 2.2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .form-card::after {
+    content: '+';
+    position: absolute;
+    right: -10px; top: -20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.03);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .form-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.4rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.55);
+  }
+
+  input, textarea {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1rem;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: rgba(255,255,255,0.3);
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--green-light);
+    background: rgba(255,255,255,0.12);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.5);
+    cursor: pointer;
+  }
+
+  textarea { resize: none; height: 76px; }
+
+  .btn-add {
+    margin-top: 1rem;
+    background: var(--green-light);
+    color: var(--green-dark);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.8rem 2rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-add:hover { background: #74c99b; transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  /* FILTERS */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tab {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .tab:hover { border-color: var(--green-light); color: var(--green-mid); }
+  .tab.active { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
+
+  /* MEDICINE LIST */
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .medicine-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0 1.2rem;
+    align-items: start;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s, box-shadow 0.18s;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .medicine-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .status-bar {
+    width: 5px;
+    border-radius: 4px;
+    min-height: 80px;
+    align-self: stretch;
+  }
+
+  .status-safe   { background: var(--safe); }
+  .status-warn   { background: var(--warn); }
+  .status-danger { background: var(--danger); }
+  .status-expired { background: #9e2a2b; }
+
+  .card-body { display: flex; flex-direction: column; gap: 0.25rem; }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    line-height: 1.2;
+  }
+
+  .card-use {
+    font-size: 0.83rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 0.4rem;
+  }
+
+  .card-dates {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .date-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .date-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .date-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.6rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-safe    { background: #d8f3dc; color: var(--safe); }
+  .badge-warn    { background: #fef3e2; color: #c76b1a; }
+  .badge-danger  { background: #fde8ea; color: var(--danger); }
+  .badge-expired { background: #f5d0d0; color: #7a1c1c; }
+
+  .btn-delete {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.3rem 0.55rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    transition: all 0.18s;
+  }
+
+  .btn-delete:hover { border-color: var(--danger); color: var(--danger); background: #fde8ea; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 3.5rem; margin-bottom: 0.8rem; opacity: 0.4; }
+  .empty h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 0.4rem; }
+  .empty p { font-size: 0.88rem; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--green-dark);
+    color: #fff;
+    padding: 0.8rem 1.3rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .header-stats { display: none; }
+    .medicine-card { grid-template-columns: auto 1fr; }
+    .card-actions { grid-column: 2; flex-direction: row; align-items: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">💊</div>
+      <div class="logo-text">
+        <h1>MediScan</h1>
+        <p>Medicine Expiry Manager</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill"><span class="dot dot-safe"></span><span id="count-safe">0</span> Safe</div>
+      <div class="stat-pill"><span class="dot dot-warn"></span><span id="count-warn">0</span> Expiring Soon</div>
+      <div class="stat-pill"><span class="dot dot-danger"></span><span id="count-expired">0</span> Expired</div>
+    </div>
+  </header>
+
+  <!-- ADD FORM -->
+  <div class="form-card">
+    <h2>➕ Add New Medicine</h2>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Medicine Name</label>
+        <input type="text" id="med-name" placeholder="e.g. Paracetamol 500mg" maxlength="80">
+      </div>
+      <div class="form-group">
+        <label>Manufacturing Date</label>
+        <input type="date" id="med-mfg">
+      </div>
+      <div class="form-group">
+        <label>Expiry Date</label>
+        <input type="date" id="med-exp">
+      </div>
+      <div class="form-group full">
+        <label>Use / Purpose</label>
+        <textarea id="med-use" placeholder="e.g. Pain reliever, fever reducer. Take 1 tablet after meals."></textarea>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addMedicine()">
+      <span>＋</span> Add Medicine
+    </button>
+  </div>
+
+  <!-- LIST -->
+  <div class="controls">
+    <div class="section-title">Your Medicines</div>
+    <div class="filter-tabs">
+      <div class="tab active" onclick="setFilter('all', this)">All</div>
+      <div class="tab" onclick="setFilter('safe', this)">Safe</div>
+      <div class="tab" onclick="setFilter('warn', this)">Expiring Soon</div>
+      <div class="tab" onclick="setFilter('expired', this)">Expired</div>
+    </div>
+  </div>
+
+  <div class="list" id="medicine-list"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let medicines = JSON.parse(localStorage.getItem('meditrack') || '[]');
+  let currentFilter = 'all';
+
+  function getStatus(expDate) {
+    const now = new Date(); now.setHours(0,0,0,0);
+    const exp = new Date(expDate);
+    const diff = Math.ceil((exp - now) / (1000*60*60*24));
+    if (diff < 0)   return 'expired';
+    if (diff <= 90) return 'warn';
+    return 'safe';
+  }
+
+  function statusLabel(s) {
+    return { safe: 'Safe', warn: 'Expiring Soon', expired: 'Expired', danger: 'Expired' }[s] || s;
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function daysLeft(expDate) {
+    const now = new Date(); now.setHours(0,0,0,0);
+    const exp = new Date(expDate);
+    const diff = Math.ceil((exp - now) / (1000*60*60*24));
+    if (diff < 0)  return `Expired ${Math.abs(diff)} day${Math.abs(diff)===1?'':'s'} ago`;
+    if (diff === 0) return 'Expires today!';
+    return `${diff} day${diff===1?'':'s'} left`;
+  }
+
+  function addMedicine() {
+    const name = document.getElementById('med-name').value.trim();
+    const mfg  = document.getElementById('med-mfg').value;
+    const exp  = document.getElementById('med-exp').value;
+    const use  = document.getElementById('med-use').value.trim();
+
+    if (!name) return showToast('⚠️ Please enter the medicine name.');
+    if (!exp)  return showToast('⚠️ Please enter the expiry date.');
+    if (mfg && exp && mfg >= exp) return showToast('⚠️ Expiry date must be after manufacturing date.');
+
+    medicines.push({ id: Date.now(), name, mfg, exp, use });
+    save();
+    render();
+    document.getElementById('med-name').value = '';
+    document.getElementById('med-mfg').value  = '';
+    document.getElementById('med-exp').value  = '';
+    document.getElementById('med-use').value  = '';
+    showToast('✅ Medicine added successfully!');
+  }
+
+  function deleteMedicine(id) {
+    medicines = medicines.filter(m => m.id !== id);
+    save();
+    render();
+    showToast('🗑️ Medicine removed.');
+  }
+
+  function save() {
+    localStorage.setItem('meditrack', JSON.stringify(medicines));
+  }
+
+  function setFilter(f, el) {
+    currentFilter = f;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    render();
+  }
+
+  function updateStats() {
+    const s = medicines.filter(m => getStatus(m.exp) === 'safe').length;
+    const w = medicines.filter(m => getStatus(m.exp) === 'warn').length;
+    const e = medicines.filter(m => getStatus(m.exp) === 'expired').length;
+    document.getElementById('count-safe').textContent    = s;
+    document.getElementById('count-warn').textContent    = w;
+    document.getElementById('count-expired').textContent = e;
+  }
+
+  function render() {
+    updateStats();
+    const list = document.getElementById('medicine-list');
+    let filtered = medicines;
+    if (currentFilter === 'safe')    filtered = medicines.filter(m => getStatus(m.exp) === 'safe');
+    if (currentFilter === 'warn')    filtered = medicines.filter(m => getStatus(m.exp) === 'warn');
+    if (currentFilter === 'expired') filtered = medicines.filter(m => getStatus(m.exp) === 'expired');
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty">
+        <div class="empty-icon">💊</div>
+        <h3>${medicines.length === 0 ? 'No medicines added yet' : 'No medicines in this category'}</h3>
+        <p>${medicines.length === 0 ? 'Add your first medicine using the form above.' : 'Try a different filter above.'}</p>
+      </div>`;
+      return;
+    }
+
+    // Sort: expired first, then by nearest expiry
+    filtered = [...filtered].sort((a,b) => new Date(a.exp) - new Date(b.exp));
+
+    list.innerHTML = filtered.map(m => {
+      const st = getStatus(m.exp);
+      const badgeClass = { safe:'badge-safe', warn:'badge-warn', expired:'badge-expired' }[st];
+      const barClass   = { safe:'status-safe', warn:'status-warn', expired:'status-expired' }[st];
+      return `
+      <div class="medicine-card">
+        <div class="status-bar ${barClass}"></div>
+        <div class="card-body">
+          <div class="card-name">${escHtml(m.name)}</div>
+          ${m.use ? `<div class="card-use">${escHtml(m.use)}</div>` : ''}
+          <div class="card-dates">
+            ${m.mfg ? `<div class="date-item">
+              <span class="date-label">Manufactured</span>
+              <span class="date-value">${formatDate(m.mfg)}</span>
+            </div>` : ''}
+            <div class="date-item">
+              <span class="date-label">Expires</span>
+              <span class="date-value">${formatDate(m.exp)}</span>
+            </div>
+            <div class="date-item">
+              <span class="date-label">Status</span>
+              <span class="date-value" style="color:${st==='safe'?'var(--safe)':st==='warn'?'#c76b1a':'var(--danger)'}">${daysLeft(m.exp)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <span class="badge ${badgeClass}">${statusLabel(st)}</span>
+          <button class="btn-delete" onclick="deleteMedicine(${m.id})" title="Delete">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Allow Enter key in name field to submit
+  document.getElementById('med-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addMedicine();
+  });
+
+  render();
+</script>
+</body>
+</html>
